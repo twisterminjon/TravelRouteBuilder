@@ -1,12 +1,7 @@
-import React from "react"
+import TravelFlow from './components/TravelFlow';
 
 function App() {
-  return (
-    <div>
-      <h1>TravelRouteBuilder</h1>
-      <p>React + TypeScript + ReactFlow project</p>
-    </div>
-  )
+  return <TravelFlow />;
 }
 
-export default App
+export default App;
