@@ -17,8 +17,21 @@ export class EdgeClass {
         source: this.source,
         target: this.target,
         type: this.type,
-        animated: false, 
+        animated: false,
         style: { stroke: '#ccc', strokeWidth: 1 }
       };
+    }
+
+    serialize(): any {
+      return {
+        id: this.id,
+        source: this.source,
+        target: this.target,
+        type: this.type
+      };
+    }
+
+    static deserialize(data: any): EdgeClass {
+      return new EdgeClass(data.source, data.target, data.type);
     }
   }

@@ -83,6 +83,63 @@ export class TravelGraph {
     return Array.from(this.edges.values()).map(edge => edge.toReactFlowEdge());
   }
 
+  // serialize to json
+  serialize(): any {
+    return {
+      nodes: Array.from(this.nodes.values()).map(node => node.serialize()),
+      edges: Array.from(this.edges.values()).map(edge => edge.serialize()),
+      metadata: {
+        createdAt: new Date().toISOString(),
+        version: '1.0',
+        nodeCount: this.nodes.size,
+        edgeCount: this.edges.size
+      }
+    };
+  }
+
+  // deserialize from json
+  static deserialize(data: any): TravelGraph {
+    const graph = new TravelGraph();
+
+    if (data.nodes) {
+      data.nodes.forEach((nodeData: any) => {
+        const node = CountryNodeClass.deserialize(nodeData);
+        graph.nodes.set(node.id, node);
+      });
+    }
+
+    if (data.edges) {
+      data.edges.forEach((edgeData: any) => {
+        const edge = EdgeClass.deserialize(edgeData);
+        graph.edges.set(edge.id, edge);
+      });
+    }
+
+    console.log(`Graph loaded: ${graph.nodes.size} nodes, ${graph.edges.size} edges`);
+    return graph;
+  }
+
+  // load data
+  loadFromData(data: any): void {
+    this.clear();
+
+    if (data.nodes) {
+      data.nodes.forEach((nodeData: any) => {
+        const node = CountryNodeClass.deserialize(nodeData);
+        this.nodes.set(node.id, node);
+      });
+    }
+
+    if (data.edges) {
+      data.edges.forEach((edgeData: any) => {
+        const edge = EdgeClass.deserialize(edgeData);
+        this.edges.set(edge.id, edge);
+      });
+    }
+
+    console.log(`Graph reloaded: ${this.nodes.size} nodes, ${this.edges.size} edges`);
+  }
+
   clear(): void {
     this.nodes.clear();
     this.edges.clear();

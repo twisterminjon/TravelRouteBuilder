@@ -3,10 +3,9 @@ import ReactFlow, { Node, Edge, useEdgesState, useNodesState, Connection } from 
 import 'reactflow/dist/style.css';
 import CountryNodeComponent from './CountryNode';
 import CountrySearch from './CountrySearch';
-import { CountryNodeClass } from '../core/CountryNodeClass';
 import { Country } from '../types';
-import { EdgeClass } from '../core/EdgeClass';
 import { TravelGraph } from '../core/TravelGraph';
+import { StorageService } from '../services/StorageService';
 
 const nodeTypes = {
     countryNode: CountryNodeComponent,
@@ -68,10 +67,142 @@ const TravelFlow: React.FC = () => {
         syncWithGraph();
     }, [syncWithGraph]);
 
+    const handleSaveRoute = useCallback(() => {
+        const routeData = graphRef.current.serialize();
+        const success = StorageService.saveRoute(routeData);
+        if (success) {
+            alert('Route saved successfully!');
+        } else {
+            alert('Failed to save route');
+        }
+    }, []);
+    
+    const handleLoadRoute = useCallback(() => {
+        const routeData = StorageService.loadRoute();
+        if (routeData) {
+            graphRef.current.loadFromData(routeData);
+            syncWithGraph();
+            alert('Route loaded successfully!');
+        } else {
+            alert('No saved route found');
+        }
+    }, [syncWithGraph]);
+    
+    const handleExportRoute = useCallback(() => {
+        const routeData = graphRef.current.serialize();
+        const filename = `travel-route-${new Date().getTime()}.json`;
+        StorageService.exportToFile(routeData, filename);
+    }, []);
+    
+    const handleImportRoute = useCallback(async () => {
+        try {
+            const routeData = await StorageService.importFromFile();
+            graphRef.current.loadFromData(routeData);
+            syncWithGraph();
+            alert('Route imported successfully!');
+        } catch (error) {
+            alert('Failed to import route');
+        }
+    }, [syncWithGraph]);
+
+    const handleClearCanvas = useCallback(() => {
+        const confirmed = window.confirm(
+          'Clear all countries and routes?'
+        );
+        
+        if (confirmed) {
+          graphRef.current.clear();
+          syncWithGraph();
+        }
+      }, [syncWithGraph]);
+
     return (
         <div style={{ display: 'flex', height: '100vh' }}>
             <div style={{ width: '360px', borderRight: '1px solid #ccc', backgroundColor: '#f5f5f5' }}>
                 <CountrySearch onCountrySelect={handleCountrySelect} />
+
+                {/* Панель управления маршрутами */}
+                <div style={{ padding: '20px', borderTop: '1px solid #ccc' }}>
+                    <h4>Route Management</h4>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                        <button 
+                            onClick={handleSaveRoute}
+                            style={{
+                                padding: '8px 12px',
+                                backgroundColor: '#4CAF50',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Save Route
+                        </button>
+                        
+                        <button 
+                            onClick={handleLoadRoute}
+                            disabled={!StorageService.hasSavedRoute()}
+                            style={{
+                                padding: '8px 12px',
+                                backgroundColor: StorageService.hasSavedRoute() ? '#2196F3' : '#ccc',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: StorageService.hasSavedRoute() ? 'pointer' : 'not-allowed'
+                            }}
+                        >
+                            Load Route
+                        </button>
+                        
+                        <hr style={{ margin: '10px 0' }} />
+                        
+                        <button 
+                            onClick={handleExportRoute}
+                            disabled={nodes.length === 0}
+                            style={{
+                                padding: '8px 12px',
+                                backgroundColor: nodes.length > 0 ? '#FF9800' : '#ccc',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: nodes.length > 0 ? 'pointer' : 'not-allowed'
+                            }}
+                        >
+                            Export JSON
+                        </button>
+                        
+                        <button 
+                            onClick={handleImportRoute}
+                            style={{
+                                padding: '8px 12px',
+                                backgroundColor: '#9C27B0',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Import JSON
+                        </button>
+                        <hr style={{ margin: '10px 0' }} />
+
+                        <button 
+                            onClick={handleClearCanvas}
+                            disabled={nodes.length === 0 && edges.length === 0}
+                            style={{
+                                padding: '8px 12px',
+                                backgroundColor: (nodes.length > 0 || edges.length > 0) ? '#f44336' : '#ccc',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: (nodes.length > 0 || edges.length > 0) ? 'pointer' : 'not-allowed'
+                            }}
+                        >
+                            Clear Canvas
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div style={{ flex: 1 }}>

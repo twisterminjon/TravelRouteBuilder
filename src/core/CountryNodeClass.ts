@@ -20,8 +20,21 @@ export class CountryNodeClass {
     };
   }
 
-  //  ( drag & drop)
+  // (drag & drop)
   updatePosition(newPosition: Position) {
     this.position = newPosition;
+  }
+
+  serialize(): any {
+    return {
+      id: this.id,
+      position: this.position,
+      countryData: this.countryData,
+      type: 'country'
+    };
+  }
+
+  static deserialize(data: any): CountryNodeClass {
+    return new CountryNodeClass(data.id, data.position, data.countryData);
   }
 }
