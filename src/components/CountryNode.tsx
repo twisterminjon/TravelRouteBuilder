@@ -16,8 +16,10 @@ const CountryNode = ({ data }: CountryNodeProps) => {
   };
 
   const flagStyles = {
-    fontSize: '24px',
-    marginBottom: '5px'
+    width: '32px',
+    height: '24px',
+    marginBottom: '5px',
+    borderRadius: '2px'
   };
 
   const nameStyles = {
@@ -32,9 +34,12 @@ const CountryNode = ({ data }: CountryNodeProps) => {
 
   return (
     <div style={nodeStyles}>
-      <div style={flagStyles}>
-        {data.flag}
-      </div>
+      <img 
+        src={data.flag} 
+        alt={`${data.name} flag`}
+        style={flagStyles}
+      />
+      
       <div style={nameStyles}>
         {data.name}
       </div>

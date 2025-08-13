@@ -1,47 +1,50 @@
+import React, { useState } from 'react';
 import ReactFlow, { Node, Edge } from 'reactflow';
 import 'reactflow/dist/style.css';
 import CountryNodeComponent from './CountryNode';
+import CountrySearch from './CountrySearch';
 import { CountryNodeClass } from '../core/CountryNodeClass';
+import { Country } from '../types';
 
 const nodeTypes = {
   countryNode: CountryNodeComponent,
 };
 
-const TravelFlow = () => {
-  const spainNode = new CountryNodeClass('1', { x: 250, y: 100 }, {
-    name: 'Spain',
-    code: 'ES',
-    flag: 'flag1'
-  });
+const TravelFlow: React.FC = () => {
+  const [nodeInstances, setNodeInstances] = useState<CountryNodeClass[]>([]);
 
-  const franceNode = new CountryNodeClass('2', { x: 250, y: 300 }, {
-    name: 'France',
-    code: 'FR',
-    flag: 'flag2'
-  });
+  // add new country to canvas
+  const handleCountrySelect = (country: Country) => {
+    const newNode = new CountryNodeClass(
+      `country-${Date.now()}`, //id
+      { x: Math.random() * 400, y: Math.random() * 400 }, // position
+      country
+    );
 
-  const nodes = [
-    spainNode.toReactFlowNode(),
-    franceNode.toReactFlowNode()
-  ];
+    setNodeInstances(prev => [...prev, newNode]);
+  };
 
-  const edges: Edge[] = [
-    {
-      id: 'e1-2',
-      source: '1',
-      target: '2',
-      type: 'smoothstep'
-    }
-  ];
+  // to React Flow format
+  const nodes: Node[] = nodeInstances.map(instance => instance.toReactFlowNode());
+
+  const edges: Edge[] = []; // temp
 
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        fitView
-      />
+    <div style={{ display: 'flex', height: '100vh' }}>
+      {/* Sidebar with search */}
+      <div style={{ width: '360px', borderRight: '1px solid #ccc', backgroundColor: '#f5f5f5' }}>
+        <CountrySearch onCountrySelect={handleCountrySelect} />
+      </div>
+
+      {/* canvas */}
+      <div style={{ flex: 1 }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          fitView
+        />
+      </div>
     </div>
   );
 };
