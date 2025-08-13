@@ -1,4 +1,4 @@
-import React, { useCallback, useReducer, useRef } from 'react';
+import React, { useCallback, useReducer, useRef, useState } from 'react';
 import ReactFlow, { Node, Edge, useEdgesState, useNodesState, Connection } from 'reactflow';
 import 'reactflow/dist/style.css';
 import CountryNodeComponent from './CountryNode';
@@ -13,10 +13,12 @@ const nodeTypes = {
 
 const TravelFlow: React.FC = () => {
     const graphRef = useRef(new TravelGraph());
-    const [, forceUpdate] = useReducer(x => x + 1, 0);
+    const [, forceUpdate] = useReducer(x => x + 1, 0);    
 
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+    const [showCycleWarning, setShowCycleWarning] = useState(false);
 
     // sync
     const syncWithGraph = useCallback(() => {
@@ -46,8 +48,12 @@ const TravelFlow: React.FC = () => {
         if (params.source && params.target) {
             const success = graphRef.current.connectCountries(params.source, params.target);
             if (success) {
+                setShowCycleWarning(false);
                 syncWithGraph();
-            }
+            } else {
+                setShowCycleWarning(true);
+                setTimeout(() => setShowCycleWarning(false), 3000);
+              }
         }
     }, [syncWithGraph]);
 
@@ -118,93 +124,118 @@ const TravelFlow: React.FC = () => {
 
     return (
         <div style={{ display: 'flex', height: '100vh' }}>
-            <div style={{ width: '360px', borderRight: '1px solid #ccc', backgroundColor: '#f5f5f5' }}>
-                <CountrySearch onCountrySelect={handleCountrySelect} />
+            <div style={{ 
+                width: '360px', 
+                borderRight: '1px solid #ccc', 
+                backgroundColor: '#f5f5f5',
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100vh'
+            }}>
+                {/* Panel */}
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                    <CountrySearch onCountrySelect={handleCountrySelect} />
 
-                {/* Панель управления маршрутами */}
-                <div style={{ padding: '20px', borderTop: '1px solid #ccc' }}>
-                    <h4>Route Management</h4>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-                        <button 
-                            onClick={handleSaveRoute}
-                            style={{
-                                padding: '8px 12px',
-                                backgroundColor: '#4CAF50',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            Save Route
-                        </button>
+                    <div style={{ padding: '20px', borderTop: '1px solid #ccc' }}>
+                        <h4>Route Management</h4>
                         
-                        <button 
-                            onClick={handleLoadRoute}
-                            disabled={!StorageService.hasSavedRoute()}
-                            style={{
-                                padding: '8px 12px',
-                                backgroundColor: StorageService.hasSavedRoute() ? '#2196F3' : '#ccc',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: StorageService.hasSavedRoute() ? 'pointer' : 'not-allowed'
-                            }}
-                        >
-                            Load Route
-                        </button>
-                        
-                        <hr style={{ margin: '10px 0' }} />
-                        
-                        <button 
-                            onClick={handleExportRoute}
-                            disabled={nodes.length === 0}
-                            style={{
-                                padding: '8px 12px',
-                                backgroundColor: nodes.length > 0 ? '#FF9800' : '#ccc',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: nodes.length > 0 ? 'pointer' : 'not-allowed'
-                            }}
-                        >
-                            Export JSON
-                        </button>
-                        
-                        <button 
-                            onClick={handleImportRoute}
-                            style={{
-                                padding: '8px 12px',
-                                backgroundColor: '#9C27B0',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            Import JSON
-                        </button>
-                        <hr style={{ margin: '10px 0' }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                            <button 
+                                onClick={handleSaveRoute}
+                                style={{
+                                    padding: '8px 12px',
+                                    backgroundColor: '#4CAF50',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Save Route
+                            </button>
+                            
+                            <button 
+                                onClick={handleLoadRoute}
+                                disabled={!StorageService.hasSavedRoute()}
+                                style={{
+                                    padding: '8px 12px',
+                                    backgroundColor: StorageService.hasSavedRoute() ? '#2196F3' : '#ccc',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: StorageService.hasSavedRoute() ? 'pointer' : 'not-allowed'
+                                }}
+                            >
+                                Load Route
+                            </button>
+                            
+                            <hr style={{ margin: '10px 0' }} />
+                            
+                            <button 
+                                onClick={handleExportRoute}
+                                disabled={nodes.length === 0}
+                                style={{
+                                    padding: '8px 12px',
+                                    backgroundColor: nodes.length > 0 ? '#FF9800' : '#ccc',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: nodes.length > 0 ? 'pointer' : 'not-allowed'
+                                }}
+                            >
+                                Export JSON
+                            </button>
+                            
+                            <button 
+                                onClick={handleImportRoute}
+                                style={{
+                                    padding: '8px 12px',
+                                    backgroundColor: '#9C27B0',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Import JSON
+                            </button>
+                            <hr style={{ margin: '10px 0' }} />
 
-                        <button 
-                            onClick={handleClearCanvas}
-                            disabled={nodes.length === 0 && edges.length === 0}
-                            style={{
-                                padding: '8px 12px',
-                                backgroundColor: (nodes.length > 0 || edges.length > 0) ? '#f44336' : '#ccc',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: (nodes.length > 0 || edges.length > 0) ? 'pointer' : 'not-allowed'
-                            }}
-                        >
-                            Clear Canvas
-                        </button>
+                            <button 
+                                onClick={handleClearCanvas}
+                                disabled={nodes.length === 0 && edges.length === 0}
+                                style={{
+                                    padding: '8px 12px',
+                                    backgroundColor: (nodes.length > 0 || edges.length > 0) ? '#f44336' : '#ccc',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: (nodes.length > 0 || edges.length > 0) ? 'pointer' : 'not-allowed'
+                                }}
+                            >
+                                Clear Canvas
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
+                {/* Tip */}
+                {showCycleWarning && (
+                    <div style={{
+                        marginBottom: '10px',
+                        padding: '8px',
+                        backgroundColor: 'red',
+                        borderRadius: '0',
+                        fontSize: '11px',
+                        color: '#fff',
+                        borderTop: '1px solid #ccc'
+                    }}>
+                        Circular routes are prevented to avoid infinite travel paths.
+                    </div>
+                )}
+            </div>
+            
+            {/* Canvas */}
             <div style={{ flex: 1 }}>
                 <ReactFlow
                     nodes={nodes}

@@ -37,11 +37,45 @@ export class TravelGraph {
       return false;
     }
 
+    if (this.isCycle(sourceId, targetId)) {
+        console.warn(`Cannot create cycle! Connection ${sourceId} → ${targetId} would allow infinite travel.`);
+        return false;
+    }
+
     const newEdge = new EdgeClass(sourceId, targetId);
     this.edges.set(newEdge.id, newEdge);
 
     console.log(`Route created: ${sourceId} → ${targetId}`);
     return true;
+  }
+
+  private isCycle(sourceId: string, targetId: string): boolean {
+    return this.hasPath(targetId, sourceId);
+  }
+
+  private hasPath(fromId: string, toId: string, visited: Set<string> = new Set()): boolean {
+    // if reached the destination - path found
+    if (fromId === toId) {
+      return true;
+    }
+  
+    // if already visited - avoid infinite recursion
+    if (visited.has(fromId)) {
+      return false;
+    }
+  
+    visited.add(fromId);
+    
+    // check all edges recursively
+    for (const edge of this.edges.values()) {
+      if (edge.source === fromId) {
+        if (this.hasPath(edge.target, toId, visited)) {
+          return true;
+        }
+      }
+    }
+  
+    return false;
   }
 
   // del node
