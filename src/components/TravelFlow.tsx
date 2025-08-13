@@ -40,6 +40,20 @@ const TravelFlow: React.FC = () => {
         setEdges(reactFlowEdges);
     }, [edgeInstances, setEdges]);
 
+    // update position
+    const handleNodesChange = useCallback((changes: any[]) => {
+        changes.forEach(change => {
+            if (change.type === 'position' && change.position) {
+                const nodeInstance = nodeInstances.find(n => n.id === change.id);
+                if (nodeInstance) {
+                    nodeInstance.updatePosition(change.position);
+                }
+            }
+        });
+        
+        onNodesChange(changes);
+    }, [nodeInstances, onNodesChange]);
+
     // add Edge
     const onConnect = useCallback((params: Connection) => {
         if (params.source && params.target) {
@@ -50,27 +64,54 @@ const TravelFlow: React.FC = () => {
         }
     }, []);
 
-  return (
-    <div style={{ display: 'flex', height: '100vh' }}>
-      {/* Sidebar with search */}
-      <div style={{ width: '360px', borderRight: '1px solid #ccc', backgroundColor: '#f5f5f5' }}>
-        <CountrySearch onCountrySelect={handleCountrySelect} />
-      </div>
+    // del Edge
+    const onEdgesDelete = useCallback((edgesToDelete: Edge[]) => {
+        const edgeIdsToDelete = edgesToDelete.map(edge => edge.id);
+        setEdgeInstances(prev => 
+        prev.filter(edgeInstance => !edgeIdsToDelete.includes(edgeInstance.id))
+        );
+    }, []);
 
-      {/* canvas */}
-      <div style={{ flex: 1 }}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          fitView
-        />
-      </div>
-    </div>
-  );
+    // del Node
+    const onNodesDelete = useCallback((nodesToDelete: Node[]) => {
+        const nodeIdsToDelete = nodesToDelete.map(node => node.id);
+        
+        setNodeInstances(prev => 
+            prev.filter(nodeInstance => !nodeIdsToDelete.includes(nodeInstance.id))
+        );
+
+        setEdgeInstances(prev => 
+            prev.filter(edgeInstance => 
+                !nodeIdsToDelete.includes(edgeInstance.source) && 
+                !nodeIdsToDelete.includes(edgeInstance.target)
+            )
+        );
+    }, []);
+
+    return (
+        <div style={{ display: 'flex', height: '100vh' }}>
+        {/* Sidebar with search */}
+        <div style={{ width: '360px', borderRight: '1px solid #ccc', backgroundColor: '#f5f5f5' }}>
+            <CountrySearch onCountrySelect={handleCountrySelect} />
+        </div>
+
+        {/* canvas */}
+        <div style={{ flex: 1 }}>
+            <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            onNodesChange={handleNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onEdgesDelete={onEdgesDelete}
+            onNodesDelete={onNodesDelete}
+            deleteKeyCode="Delete"
+            fitView
+            />
+        </div>
+        </div>
+    );
 };
 
 export default TravelFlow;
