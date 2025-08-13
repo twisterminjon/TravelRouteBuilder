@@ -6,6 +6,7 @@ import CountrySearch from './CountrySearch';
 import { Country } from '../types';
 import { TravelGraph } from '../core/TravelGraph';
 import { StorageService } from '../services/StorageService';
+import { RouteBlockingService } from '../services/RouteBlockingService';
 
 const nodeTypes = {
     countryNode: CountryNodeComponent,
@@ -18,7 +19,11 @@ const TravelFlow: React.FC = () => {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-    const [showCycleWarning, setShowCycleWarning] = useState(false);
+    const [warningMessage, setWarningMessage] = useState<string | null>(null);    
+
+    React.useEffect(() => {
+        RouteBlockingService.loadBlockedRoutes();
+      }, []);
 
     // sync
     const syncWithGraph = useCallback(() => {
@@ -44,16 +49,16 @@ const TravelFlow: React.FC = () => {
     }, [onNodesChange]);
 
     // add edge
-    const onConnect = useCallback((params: Connection) => {
+        const onConnect = useCallback(async (params: Connection) => {
         if (params.source && params.target) {
-            const success = graphRef.current.connectCountries(params.source, params.target);
-            if (success) {
-                setShowCycleWarning(false);
+            const result = await graphRef.current.connectCountries(params.source, params.target);
+            if (result.success) {
+                setWarningMessage(null);
                 syncWithGraph();
             } else {
-                setShowCycleWarning(true);
-                setTimeout(() => setShowCycleWarning(false), 3000);
-              }
+                setWarningMessage(result.reason || 'Connection failed');
+                setTimeout(() => setWarningMessage(null), 3000);
+            }
         }
     }, [syncWithGraph]);
 
@@ -122,7 +127,7 @@ const TravelFlow: React.FC = () => {
         }
       }, [syncWithGraph]);
 
-    return (
+  return (
         <div style={{ display: 'flex', height: '100vh' }}>
             <div style={{ 
                 width: '360px', 
@@ -220,7 +225,7 @@ const TravelFlow: React.FC = () => {
                 </div>
 
                 {/* Tip */}
-                {showCycleWarning && (
+                {warningMessage && (
                     <div style={{
                         marginBottom: '10px',
                         padding: '8px',
@@ -230,7 +235,7 @@ const TravelFlow: React.FC = () => {
                         color: '#fff',
                         borderTop: '1px solid #ccc'
                     }}>
-                        Circular routes are prevented to avoid infinite travel paths.
+                        {warningMessage}
                     </div>
                 )}
             </div>
@@ -250,8 +255,8 @@ const TravelFlow: React.FC = () => {
                     fitView
                 />
             </div>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default TravelFlow;

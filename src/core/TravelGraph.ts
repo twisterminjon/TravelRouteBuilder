@@ -1,6 +1,7 @@
 import { CountryNodeClass } from './CountryNodeClass';
 import { EdgeClass } from './EdgeClass';
 import { Country, Position } from '../types';
+import { RouteBlockingService } from '../services/RouteBlockingService';
 
 export class TravelGraph {
   private nodes: Map<string, CountryNodeClass> = new Map();
@@ -22,10 +23,10 @@ export class TravelGraph {
   }
 
   // add edge
-  connectCountries(sourceId: string, targetId: string): boolean {
+  async connectCountries(sourceId: string, targetId: string): Promise<{ success: boolean; reason?: string }> {
     if (!this.nodes.has(sourceId) || !this.nodes.has(targetId)) {
       console.warn('One or both nodes do not exist');
-      return false;
+      return { success: false, reason: 'One or both countries do not exist' };
     }
 
     const existingEdge = Array.from(this.edges.values()).find(
@@ -34,19 +35,35 @@ export class TravelGraph {
     
     if (existingEdge) {
       console.warn('Connection exists');
-      return false;
+      return { success: false, reason: 'Connection already exists' };
     }
 
     if (this.isCycle(sourceId, targetId)) {
         console.warn(`Cannot create cycle! Connection ${sourceId} → ${targetId} would allow infinite travel.`);
-        return false;
+        return { success: false, reason: 'Cannot create cycle - would allow infinite travel' };
+    }
+
+    // check if route is blocked
+    const sourceNode = this.nodes.get(sourceId);
+    const targetNode = this.nodes.get(targetId);
+    
+    if (sourceNode && targetNode) {
+        const isBlocked = RouteBlockingService.isRouteBlocked(
+        sourceNode.countryData.code, 
+        targetNode.countryData.code
+        );
+        
+        if (isBlocked) {
+        console.warn(`Route blocked: ${sourceNode.countryData.name} → ${targetNode.countryData.name}`);
+        return { success: false, reason: `Route ${sourceNode.countryData.name} → ${targetNode.countryData.name} is blocked by travel restrictions` };
+        }
     }
 
     const newEdge = new EdgeClass(sourceId, targetId);
     this.edges.set(newEdge.id, newEdge);
 
     console.log(`Route created: ${sourceId} → ${targetId}`);
-    return true;
+    return { success: true };
   }
 
   private isCycle(sourceId: string, targetId: string): boolean {
